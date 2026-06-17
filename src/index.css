@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/* KaTeX overrides for warm academic feel */
+.katex-display {
+  margin: 1.5rem 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+}
+
+.katex {
+  font-size: 0.95em !important;
+  color: #404040;
+}
+
+/* Ensure code inside pre uses its own font */
+pre code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+  font-size: inherit;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  color: inherit !important;
+}

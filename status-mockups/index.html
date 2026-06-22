@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project status — design mockups</title>
+<style>
+  :root {
+    --bg: #fbf8f1;
+    --ink: #2f2923;
+    --ink-strong: #211c17;
+    --muted: #9c8c7a;
+    --muted2: #76695c;
+    --body: #66594d;
+    --line: #d8cec2;
+    --accent: #7d5e3f;
+    --card: #fdfbf6;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --serif: ui-serif, Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 48rem; margin: 0 auto; padding: 0 1.5rem; }
+
+  /* ---- switcher ---- */
+  .switch-bar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(251,248,241,0.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .switch-inner { max-width: 48rem; margin: 0 auto; padding: 0.85rem 1.5rem; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+  .switch-label { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-right: 0.6rem; }
+  .switch-btn {
+    font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0.35rem 0.7rem; border: 1px solid var(--line); background: transparent; color: var(--muted2);
+    border-radius: 999px; cursor: pointer; transition: all .18s;
+  }
+  .switch-btn:hover { color: var(--ink); border-color: var(--muted); }
+  .switch-btn.active { background: var(--ink-strong); color: #f3ece1; border-color: var(--ink-strong); }
+
+  .intro { padding: 3.2rem 0 1rem; }
+  .intro .kicker { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--muted); }
+  .intro h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.7rem, 3.4vw, 2.4rem); color: var(--ink-strong); margin: 0.7rem 0 0.4rem; }
+  .intro p { color: var(--body); max-width: 34rem; }
+
+  .variant { display: none; padding-bottom: 6rem; }
+  .variant.active { display: block; }
+  .variant-head { padding: 2.2rem 0 0.4rem; }
+  .variant-head .vname { font-family: var(--serif); font-size: 1.35rem; color: var(--ink-strong); }
+  .variant-head .vdesc { color: var(--muted2); font-size: 0.92rem; margin-top: 0.2rem; }
+
+  /* status pill shared */
+  .pill { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 0.2rem 0.55rem; border-radius: 999px; white-space: nowrap; border: 1px solid; }
+  .pill.active   { color: #4a6b46; border-color: #b9cdb2; background: #eef3ea; }
+  .pill.writing  { color: #7d5e3f; border-color: #d8c3a6; background: #f6efe3; }
+  .pill.shipped  { color: #4a5b6b; border-color: #b2c1cd; background: #eaeff3; }
+  .pill.paused   { color: #8a7a5e; border-color: #ddcfb0; background: #f5f0e3; }
+
+  /* ============ VARIANT 1: LEDGER ============ */
+  .ledger { border-top: 1px solid var(--line); margin-top: 1.6rem; }
+  .ledger-row { border-bottom: 1px solid var(--line); padding: 1.5rem 0; cursor: pointer; }
+  .ledger-top { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: baseline; }
+  .ledger-title { font-size: 1.08rem; color: var(--ink); transition: color .18s; }
+  .ledger-row:hover .ledger-title { color: var(--accent); }
+  .ledger-meta { display: flex; gap: 0.7rem; align-items: center; }
+  .ledger-date { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .ledger-focus { color: var(--body); margin-top: 0.5rem; font-size: 0.95rem; }
+  .ledger-detail { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+  .ledger-row.open .ledger-detail { max-height: 600px; }
+  .ledger-detail-inner { padding-top: 1rem; color: var(--body); font-size: 0.9rem; }
+  .ledger-stats { display: flex; gap: 1.6rem; flex-wrap: wrap; margin-top: 0.9rem; }
+  .ledger-stat .n { font-family: var(--serif); font-size: 1.25rem; color: var(--ink-strong); }
+  .ledger-stat .l { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .expand-hint { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; }
+
+  /* ============ VARIANT 2: CARDS ============ */
+  .cards { display: grid; gap: 1.1rem; margin-top: 1.6rem; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1.5rem 1.6rem;
+  }
+  .card-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+  .card-title { font-size: 1.1rem; color: var(--ink-strong); margin: 0; }
+  .card-sub { color: var(--body); font-size: 0.92rem; margin: 0.45rem 0 0; }
+  .card-stats { display: flex; gap: 1.8rem; flex-wrap: wrap; margin: 1.2rem 0 1rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+  .card-stat .n { font-family: var(--serif); font-size: 1.3rem; color: var(--ink-strong); display: block; }
+  .card-stat .l { font-family: var(--mono); font-size: 0.57rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .card-latest { font-size: 0.86rem; color: var(--muted2); display: flex; gap: 0.55rem; align-items: baseline; }
+  .card-latest .dot { color: var(--accent); }
+  .card-latest .when { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-left: auto; white-space: nowrap; }
+
+  /* ============ VARIANT 3: STREAM ============ */
+  .stream { margin-top: 1.6rem; border-left: 1px solid var(--line); padding-left: 1.4rem; }
+  .stream-item { position: relative; padding: 0 0 1.9rem; }
+  .stream-item::before {
+    content: ""; position: absolute; left: -1.4rem; top: 0.45rem; width: 7px; height: 7px;
+    border-radius: 999px; background: var(--bg); border: 1.5px solid var(--muted); transform: translateX(-3.6px);
+  }
+  .stream-item.fresh::before { background: var(--accent); border-color: var(--accent); }
+  .stream-when { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .stream-proj { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-left: 0.6rem; }
+  .stream-text { color: var(--ink); margin-top: 0.35rem; font-size: 0.96rem; }
+  .stream-text .sub { color: var(--body); font-size: 0.88rem; }
+
+  .footnote { border-top: 1px solid var(--line); margin-top: 2rem; padding-top: 1.2rem; color: var(--muted); font-size: 0.78rem; font-family: var(--mono); letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+
+<div class="switch-bar">
+  <div class="switch-inner">
+    <span class="switch-label">Mockup</span>
+    <button class="switch-btn active" data-v="ledger">A · Ledger</button>
+    <button class="switch-btn" data-v="cards">B · Status cards</button>
+    <button class="switch-btn" data-v="stream">C · Activity stream</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="intro">
+    <div class="kicker">Design preview — three forms of the same data</div>
+    <h1>Now / Current work</h1>
+    <p>A live section for the site. Statuses below are pulled from a single data file so the page updates as the work moves — no rewriting by hand. Toggle the three layouts above. Content is real, drawn from your repos; correct anything that's off.</p>
+  </div>
+
+  <!-- ============ VARIANT A: LEDGER ============ -->
+  <section class="variant active" id="ledger">
+    <div class="variant-head">
+      <div class="vname">A — The Ledger</div>
+      <div class="vdesc">Closest to your home page. Quiet rows; click any to expand. Best when the list stays short and you want it to feel like the rest of the site.</div>
+    </div>
+    <div class="ledger" id="ledger-rows"></div>
+  </section>
+
+  <!-- ============ VARIANT B: CARDS ============ -->
+  <section class="variant" id="cards">
+    <div class="variant-head">
+      <div class="vname">B — Status cards</div>
+      <div class="vdesc">More surface area per project: headline metrics and the latest update visible at a glance. Best for showing momentum to a visitor who doesn't click.</div>
+    </div>
+    <div class="cards" id="card-list"></div>
+  </section>
+
+  <!-- ============ VARIANT C: STREAM ============ -->
+  <section class="variant" id="stream">
+    <div class="variant-head">
+      <div class="vname">C — Activity stream</div>
+      <div class="vdesc">Reverse-chronological feed across all projects, like a changelog. Best fit for "progress shows up without me writing about it" — each commit or log entry can append a line.</div>
+    </div>
+    <div class="stream" id="stream-list"></div>
+  </section>
+
+  <div class="footnote" id="footnote"></div>
+</div>
+
+<script>
+// ---- single source of truth (this is the "data file" that would auto-update) ----
+const PROJECTS = [
+  {
+    id: "arc",
+    title: "ARC-AGI-3 — object-centric world-model agent",
+    status: "active", statusLabel: "Active · paused",
+    updated: "Jun 16, 2026",
+    focus: "110+ hr autonomous research run building a game-conditioned world model for few-shot transfer on ARC-AGI-3, with periodic human interventions to reshape the trajectory.",
+    detail: "Committed paradigm: one pretrained game-conditioned world model → learned game identity via test-time adaptation → inverse-dynamics novelty → game-conditioned value head → k-step latent MPC. The bar is decision-usefulness (can the model pick the better imagined action), not pixel reconstruction. Latest: E331 closeout — P1/P2/A4 partially supported, joint gate not yet validated on a single seed. Currently in a deliberate token-budget pause before the next variant.",
+    stats: [
+      { n: "110+", l: "hrs autonomous" },
+      { n: "25", l: "public games probed" },
+      { n: "330+", l: "experiments logged" },
+      { n: "<$1k", l: "GPU spend cap held" },
+    ],
+    activity: [
+      { when: "Jun 16", text: "E331 closeout: P1/P2/A4 partially supported; joint gate not yet validated (single seed). Entered PI-ordered pause before next A4 variant." },
+      { when: "Jun 15", text: "Built the full HTML experiment report; GPU instance terminated, spend kept well under cap." },
+      { when: "Jun 10", text: "Run started. All 25 public environments reachable + deterministic replay confirmed (E0 probe)." },
+    ],
+  },
+  {
+    id: "trm",
+    title: "TRM — what the halting head actually learns",
+    status: "writing", statusLabel: "Writing",
+    updated: "Jun 2026",
+    focus: "Investigating the Tiny Recursive Model: what its halting \"Q\" head really rewards.",
+    detail: "Post 1 — \"What TRM's Halting Head Actually Learns\": Q, trained only to predict exact-label match, mostly rewards clean path structure over exact labels or shortest-optimality (AUC Δ +0.095 for cleanliness over canonical label; replicated across schedule-jitter checkpoints). Related essay — \"Saying Things That Are True.\" Alongside: an HRM-Text 1B thread on ACT cycle ablations and a frozen-state abstention/calibration gate.",
+    stats: [
+      { n: "1", l: "TRM post" },
+      { n: "+0.095", l: "AUC clean gap" },
+      { n: "890/1000", l: "clean routes" },
+    ],
+    activity: [
+      { when: "Jun 2026", text: "Verifier post drafted: Q ranks validity over the canonical label it was trained on." },
+      { when: "Mar 2026", text: "Published Saying Things That Are True on Substack." },
+      { when: "May 2026", text: "HRM-Text 1B: ACT cycle ablations + frozen-state abstention gate work." },
+    ],
+  },
+  {
+    id: "biobench",
+    title: "BioBench — does the model understand intercellular biology?",
+    status: "shipped", statusLabel: "v3 · shipped",
+    updated: "May 2026",
+    focus: "A benchmark testing whether a cell-cascade model propagates ligand → receptor → pathway signals the way real cells do — independent of clinical-outcome prediction.",
+    detail: "Causally-grounded row construction: SIGNOR defines receptor→pathway links, OmniPath adds high-confidence secreted ligands, PROGENy measures whether the pathway actually changed in the receiver cell. 137 rows across 9 pathways after four rounds of progressive tightening. Pathways without a clean intercellular receptor path (e.g. p53, NFkB) dropped out by construction. Has a frontend and a training-signal audit.",
+    stats: [
+      { n: "137", l: "test rows" },
+      { n: "9", l: "pathways" },
+      { n: "4", l: "tightening rounds" },
+      { n: "3", l: "grounding databases" },
+    ],
+    activity: [
+      { when: "May 12", text: "Exploratory regional BioBench module added." },
+      { when: "May 6", text: "Frontend + training-signal audit shipped." },
+      { when: "May 5", text: "v13.1B specificity interpretation." },
+    ],
+  },
+];
+
+const SORT_KEY = { active: 0, writing: 1, shipped: 2, paused: 1 };
+
+// ---- VARIANT A: ledger ----
+const lr = document.getElementById("ledger-rows");
+PROJECTS.forEach((p) => {
+  const row = document.createElement("div");
+  row.className = "ledger-row";
+  row.innerHTML = `
+    <div class="ledger-top">
+      <div class="ledger-title">${p.title}</div>
+      <div class="ledger-meta">
+        <span class="pill ${p.status}">${p.statusLabel}</span>
+        <span class="ledger-date">${p.updated}</span>
+      </div>
+    </div>
+    <div class="ledger-focus">${p.focus}</div>
+    <div class="ledger-detail"><div class="ledger-detail-inner">
+      ${p.detail}
+      <div class="ledger-stats">
+        ${p.stats.map(s => `<div class="ledger-stat"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join("")}
+      </div>
+    </div></div>`;
+  row.addEventListener("click", () => row.classList.toggle("open"));
+  lr.appendChild(row);
+});
+
+// ---- VARIANT B: cards ----
+const cl = document.getElementById("card-list");
+PROJECTS.forEach((p) => {
+  const c = document.createElement("div");
+  c.className = "card";
+  c.innerHTML = `
+    <div class="card-head">
+      <div>
+        <h3 class="card-title">${p.title}</h3>
+        <p class="card-sub">${p.focus}</p>
+      </div>
+      <span class="pill ${p.status}">${p.statusLabel}</span>
+    </div>
+    <div class="card-stats">
+      ${p.stats.map(s => `<div class="card-stat"><span class="n">${s.n}</span><span class="l">${s.l}</span></div>`).join("")}
+    </div>
+    <div class="card-latest"><span class="dot">●</span><span>${p.activity[0].text}</span><span class="when">${p.activity[0].when}</span></div>`;
+  cl.appendChild(c);
+});
+
+// ---- VARIANT C: stream ----
+const feed = [];
+PROJECTS.forEach((p) => p.activity.forEach((a, i) => feed.push({ ...a, proj: p.id.toUpperCase(), fresh: i === 0 })));
+// keep author order but interleave by listed recency (already roughly chronological per project)
+const sl = document.getElementById("stream-list");
+feed.forEach((f) => {
+  const it = document.createElement("div");
+  it.className = "stream-item" + (f.fresh ? " fresh" : "");
+  it.innerHTML = `
+    <div><span class="stream-when">${f.when}</span><span class="stream-proj">${f.proj}</span></div>
+    <div class="stream-text">${f.text}</div>`;
+  sl.appendChild(it);
+});
+
+document.getElementById("footnote").textContent =
+  "Mockup generated " + new Date().toISOString().slice(0,10) + " · all three views render from the same PROJECTS array · data would refresh from repo commits + log files";
+
+// ---- switcher ----
+document.querySelectorAll(".switch-btn").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".switch-btn").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".variant").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById(b.dataset.v).classList.add("active");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  });
+});
+</script>
+</body>
+</html>

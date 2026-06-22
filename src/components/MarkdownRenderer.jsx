@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -19,39 +21,196 @@ function preprocess(md) {
   });
 }
 
-const components = {
+function renderImageButton({ src, alt, width, imageClassName, openImage }) {
+  return (
+    <button
+      type="button"
+      className="group inline-flex cursor-zoom-in justify-start"
+      onClick={() => openImage({ src, alt: alt || "" })}
+      aria-label={alt ? `Open image: ${alt}` : "Open image"}
+    >
+      <img
+        src={src}
+        alt={alt || ""}
+        width={width}
+        className={`${imageClassName} transition-opacity group-hover:opacity-90`}
+        style={width ? { width: `${width}px` } : undefined}
+      />
+    </button>
+  );
+}
+
+const presets = {
+  warmSans: {
+    article: "markdown-body markdown-body-warm",
+    h1: "mt-14 mb-6 border-b border-[#d8cec2] pb-3 text-3xl font-light leading-tight tracking-normal text-[#211c17]",
+    h2: "mt-12 mb-5 text-2xl font-normal leading-tight tracking-normal text-[#2f2923]",
+    h3: "mt-9 mb-3 text-xl font-normal leading-tight tracking-normal text-[#3c332b]",
+    p: "mb-5 text-[1rem] leading-8 text-[#5f5449]",
+    blockquote:
+      "my-8 border-l border-[#bba78f] pl-5 text-[1rem] leading-8 text-[#66594d] italic",
+    link: "text-[#7d5e3f] underline decoration-[#b9a48c] underline-offset-4 transition-colors hover:text-[#4b3828] hover:decoration-[#7d5e3f]",
+    img: "max-w-full border border-[#d8cec2]",
+    inlineCode:
+      "border border-[#d8cec2] bg-[#f5efe4] px-1.5 py-0.5 text-[0.85em] text-[#6d4e32]",
+    pre: "my-8 overflow-x-auto border border-[#d8cec2] bg-[#2b241e] p-5 text-xs leading-relaxed text-[#f5efe4]",
+    ul: "my-5 ml-5 list-disc space-y-2 text-[1rem] leading-8 text-[#5f5449] marker:text-[#b9a48c]",
+    ol: "my-5 ml-5 list-decimal space-y-2 text-[1rem] leading-8 text-[#5f5449] marker:text-[#9c8c7a]",
+    tableWrap:
+      "my-10 -mx-4 overflow-x-auto px-4 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10",
+    table: "w-full border-collapse text-sm",
+    thead: "border-b border-[#bba78f] text-left text-[#3c332b]",
+    tr: "border-b border-[#e1d8cc]",
+    th: "py-2.5 pr-4 font-medium text-[#3c332b]",
+    td: "py-2.5 pr-4 align-top text-[#5f5449]",
+    hr: "my-12 h-px border-none bg-[#d8cec2]",
+    strong: "font-semibold text-[#2f2923]",
+    em: "italic text-[#4b4239]",
+  },
+  serifHeadings: {
+    article: "markdown-body markdown-body-serif-headings",
+    h1: "mt-14 mb-7 border-b border-[#d6c7b6] pb-4 font-serif text-4xl font-normal leading-tight tracking-normal text-[#211c17]",
+    h2: "mt-14 mb-5 font-serif text-3xl font-normal leading-tight tracking-normal text-[#2a241e]",
+    h3: "mt-10 mb-3 font-serif text-2xl font-normal leading-tight tracking-normal text-[#3a3028]",
+    p: "mb-5 text-[1rem] leading-8 text-[#5c5146]",
+    blockquote:
+      "my-9 border-l border-[#a98d70] pl-5 font-serif text-xl leading-8 text-[#5c4634]",
+    link: "text-[#7d5e3f] underline decoration-[#c4ad95] underline-offset-4 transition-colors hover:text-[#3f2d1f] hover:decoration-[#7d5e3f]",
+    img: "max-w-full border border-[#d6c7b6]",
+    inlineCode:
+      "border border-[#d6c7b6] bg-[#f4ecdf] px-1.5 py-0.5 font-mono text-[0.85em] text-[#6d4e32]",
+    pre: "my-8 overflow-x-auto border border-[#d6c7b6] bg-[#2b241e] p-5 font-mono text-xs leading-relaxed text-[#f5efe4]",
+    ul: "my-5 ml-5 list-disc space-y-2 text-[1rem] leading-8 text-[#5c5146] marker:text-[#b89d82]",
+    ol: "my-5 ml-5 list-decimal space-y-2 text-[1rem] leading-8 text-[#5c5146] marker:text-[#9c8268]",
+    tableWrap:
+      "my-10 -mx-4 overflow-x-auto px-4 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10",
+    table: "w-full border-collapse text-sm",
+    thead: "border-b border-[#a98d70] text-left text-[#3a3028]",
+    tr: "border-b border-[#ded2c5]",
+    th: "py-2.5 pr-4 font-medium text-[#3a3028]",
+    td: "py-2.5 pr-4 align-top text-[#5c5146]",
+    hr: "my-12 h-px border-none bg-[#d6c7b6]",
+    strong: "font-semibold text-[#2a241e]",
+    em: "font-serif italic text-[#4b3f35]",
+  },
+  serifAll: {
+    article: "markdown-body markdown-body-serif-all font-serif",
+    h1: "mt-14 mb-7 border-b border-[#d6c7b6] pb-4 text-4xl font-normal leading-tight tracking-normal text-[#211c17]",
+    h2: "mt-14 mb-5 text-3xl font-normal leading-tight tracking-normal text-[#2a241e]",
+    h3: "mt-10 mb-3 text-2xl font-normal leading-tight tracking-normal text-[#3a3028]",
+    p: "mb-5 text-[1.08rem] leading-8 text-[#554a40]",
+    blockquote:
+      "my-9 border-l border-[#a98d70] pl-5 text-xl leading-8 text-[#5c4634] italic",
+    link: "text-[#745235] underline decoration-[#c4ad95] underline-offset-4 transition-colors hover:text-[#3f2d1f] hover:decoration-[#745235]",
+    img: "max-w-full border border-[#d6c7b6]",
+    inlineCode:
+      "border border-[#d6c7b6] bg-[#f4ecdf] px-1.5 py-0.5 font-mono text-[0.8em] text-[#6d4e32]",
+    pre: "my-8 overflow-x-auto border border-[#d6c7b6] bg-[#2b241e] p-5 font-mono text-xs leading-relaxed text-[#f5efe4]",
+    ul: "my-5 ml-5 list-disc space-y-2 text-[1.08rem] leading-8 text-[#554a40] marker:text-[#b89d82]",
+    ol: "my-5 ml-5 list-decimal space-y-2 text-[1.08rem] leading-8 text-[#554a40] marker:text-[#9c8268]",
+    tableWrap:
+      "my-10 -mx-4 overflow-x-auto px-4 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10",
+    table: "w-full border-collapse text-sm",
+    thead: "border-b border-[#a98d70] text-left text-[#3a3028]",
+    tr: "border-b border-[#ded2c5]",
+    th: "py-2.5 pr-4 font-medium text-[#3a3028]",
+    td: "py-2.5 pr-4 align-top text-[#554a40]",
+    hr: "my-12 h-px border-none bg-[#d6c7b6]",
+    strong: "font-semibold text-[#2a241e]",
+    em: "italic text-[#4b3f35]",
+  },
+  fieldNotes: {
+    article: "markdown-body markdown-body-field-notes",
+    h1: "mt-14 mb-6 border-b border-[#d8cec2] pb-3 font-mono text-2xl font-normal uppercase leading-tight tracking-[0.08em] text-[#211c17]",
+    h2: "mt-12 mb-4 font-mono text-sm font-normal uppercase leading-6 tracking-[0.22em] text-[#7d5e3f]",
+    h3: "mt-9 mb-3 font-mono text-sm font-normal uppercase leading-6 tracking-[0.16em] text-[#3c332b]",
+    p: "mb-4 text-[0.96rem] leading-8 text-[#5d5248]",
+    blockquote:
+      "my-8 border-l border-[#b9a48c] bg-[#f4ecdf]/45 px-5 py-4 text-[0.96rem] leading-8 text-[#5d5248]",
+    link: "text-[#7d5e3f] underline decoration-[#b9a48c] underline-offset-4 transition-colors hover:text-[#3f2d1f] hover:decoration-[#7d5e3f]",
+    img: "max-w-full border border-[#d8cec2]",
+    inlineCode:
+      "border border-[#d8cec2] bg-[#f5efe4] px-1.5 py-0.5 font-mono text-[0.85em] text-[#6d4e32]",
+    pre: "my-8 overflow-x-auto border border-[#d8cec2] bg-[#28231e] p-5 font-mono text-xs leading-relaxed text-[#f5efe4]",
+    ul: "my-5 ml-5 list-disc space-y-2 text-[0.96rem] leading-8 text-[#5d5248] marker:text-[#9c8c7a]",
+    ol: "my-5 ml-5 list-decimal space-y-2 text-[0.96rem] leading-8 text-[#5d5248] marker:text-[#9c8c7a]",
+    tableWrap:
+      "my-10 -mx-4 overflow-x-auto px-4 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10",
+    table: "w-full border-collapse font-mono text-xs",
+    thead: "border-b border-[#b9a48c] text-left uppercase tracking-[0.12em] text-[#3c332b]",
+    tr: "border-b border-[#e1d8cc]",
+    th: "py-2.5 pr-4 font-normal text-[#3c332b]",
+    td: "py-2.5 pr-4 align-top text-[#5d5248]",
+    hr: "my-12 h-px border-none bg-[#d8cec2]",
+    strong: "font-semibold text-[#2f2923]",
+    em: "italic text-[#4b4239]",
+  },
+};
+
+function createComponents(styles, openImage) {
+  return {
   // Headings
   h1: ({ children }) => (
-    <h1 className="text-2xl font-normal text-neutral-900 mt-14 mb-6 pb-2 border-b border-neutral-200">
+    <h1 className={styles.h1}>
       {children}
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-xl font-normal text-neutral-800 mt-10 mb-4">
+    <h2 className={styles.h2}>
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-lg font-normal text-neutral-700 mt-8 mb-3">
+    <h3 className={styles.h3}>
       {children}
     </h3>
   ),
 
   // Paragraphs
   p: ({ children, node }) => {
-    // Check if this paragraph only contains an img — if so, render as figure
+    // Image-only markdown paragraphs need to avoid nesting a figure inside <p>.
     const child = node?.children;
-    if (child?.length === 1 && child[0].tagName === "img") {
-      return <>{children}</>;
+    if (
+      child?.length === 2 &&
+      child[0].type === "element" &&
+      child[0].tagName === "img" &&
+      child[1].type === "text" &&
+      child[1].value.trim().match(/^Fig(?:\.|ure)?\s*\d*/i)
+    ) {
+      const image = child[0].properties ?? {};
+      const caption = child[1].value.trim();
+      return (
+        <figure className="my-10">
+          {renderImageButton({
+            src: image.src,
+            alt: image.alt,
+            width: image.width,
+            imageClassName: styles.img,
+            openImage,
+          })}
+          <figcaption className="mt-3 text-left text-sm leading-6 text-[#76695c]">
+            {caption}
+          </figcaption>
+        </figure>
+      );
+    }
+    if (
+      child?.length === 1 &&
+      child[0].type === "element" &&
+      child[0].tagName === "img"
+    ) {
+      return (
+        <figure className="my-10 flex flex-col items-start">{children}</figure>
+      );
     }
     return (
-      <p className="text-sm text-neutral-600 leading-[1.85] mb-4">{children}</p>
+      <p className={styles.p}>{children}</p>
     );
   },
 
   // Blockquotes
   blockquote: ({ children }) => (
-    <blockquote className="my-6 pl-4 border-l-4 border-amber-800/30 text-sm text-neutral-600 leading-[1.85] italic">
+    <blockquote className={styles.blockquote}>
       {children}
     </blockquote>
   ),
@@ -60,7 +219,7 @@ const components = {
   a: ({ href, children }) => (
     <a
       href={href}
-      className="text-amber-800 underline underline-offset-2 decoration-amber-800/30 hover:decoration-amber-800/60 transition-colors"
+      className={styles.link}
       target={href?.startsWith("http") ? "_blank" : undefined}
       rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}
     >
@@ -70,15 +229,13 @@ const components = {
 
   // Images
   img: ({ src, alt, width }) => (
-    <figure className="my-8 flex flex-col items-center">
-      <img
-        src={src}
-        alt={alt || ""}
-        width={width}
-        className="rounded max-w-full"
-        style={width ? { width: `${width}px` } : undefined}
-      />
-    </figure>
+    renderImageButton({
+      src,
+      alt,
+      width,
+      imageClassName: styles.img,
+      openImage,
+    })
   ),
 
   // Inline code
@@ -87,7 +244,7 @@ const components = {
     const isInline = !className;
     if (isInline) {
       return (
-        <code className="text-[0.85em] px-1.5 py-0.5 rounded bg-neutral-100 text-amber-900 border border-neutral-200">
+        <code className={styles.inlineCode}>
           {children}
         </code>
       );
@@ -101,19 +258,19 @@ const components = {
 
   // Code blocks
   pre: ({ children }) => (
-    <pre className="my-6 p-5 rounded-lg bg-neutral-900 text-neutral-200 text-xs leading-relaxed overflow-x-auto border border-neutral-800">
+    <pre className={styles.pre}>
       {children}
     </pre>
   ),
 
   // Lists
   ul: ({ children }) => (
-    <ul className="my-4 ml-5 space-y-1.5 list-disc marker:text-neutral-300 text-sm text-neutral-600 leading-[1.85]">
+    <ul className={styles.ul}>
       {children}
     </ul>
   ),
   ol: ({ children }) => (
-    <ol className="my-4 ml-5 space-y-1.5 list-decimal marker:text-neutral-400 text-sm text-neutral-600 leading-[1.85]">
+    <ol className={styles.ol}>
       {children}
     </ol>
   ),
@@ -121,48 +278,181 @@ const components = {
 
   // Tables (GFM)
   table: ({ children }) => (
-    <div className="my-8 -mx-4 sm:-mx-8 md:-mx-12 overflow-x-auto px-4 sm:px-8 md:px-12">
-      <table className="w-full text-xs border-collapse">{children}</table>
+    <div className={styles.tableWrap}>
+      <table className={styles.table}>{children}</table>
     </div>
   ),
   thead: ({ children }) => (
-    <thead className="border-b-2 border-neutral-300 text-left text-neutral-700">
+    <thead className={styles.thead}>
       {children}
     </thead>
   ),
   tbody: ({ children }) => <tbody>{children}</tbody>,
   tr: ({ children }) => (
-    <tr className="border-b border-neutral-200">{children}</tr>
+    <tr className={styles.tr}>{children}</tr>
   ),
   th: ({ children }) => (
-    <th className="py-2 pr-4 font-medium text-neutral-700">{children}</th>
+    <th className={styles.th}>{children}</th>
   ),
   td: ({ children }) => (
-    <td className="py-2 pr-4 text-neutral-600 align-top">{children}</td>
+    <td className={styles.td}>{children}</td>
   ),
 
   // Horizontal rule
-  hr: () => <hr className="my-10 border-none h-px bg-neutral-200" />,
+  hr: () => <hr className={styles.hr} />,
 
   // Strong / em
   strong: ({ children }) => (
-    <strong className="font-semibold text-neutral-800">{children}</strong>
+    <strong className={styles.strong}>{children}</strong>
   ),
-  em: ({ children }) => <em className="italic text-neutral-700">{children}</em>,
-};
+  em: ({ children }) => <em className={styles.em}>{children}</em>,
+  };
+}
 
-export default function MarkdownRenderer({ content }) {
+export default function MarkdownRenderer({ content, variant = "warmSans" }) {
+  const [lightbox, setLightbox] = useState(null);
+  const [zoom, setZoom] = useState(1);
   const processed = preprocess(content);
+  const styles = presets[variant] ?? presets.warmSans;
+  const components = createComponents(styles, (image) => {
+    setLightbox(image);
+    setZoom(1);
+  });
+
+  useEffect(() => {
+    if (!lightbox) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") {
+        setLightbox(null);
+      }
+      if (event.key === "+" || event.key === "=") {
+        setZoom((value) => Math.min(value + 0.25, 4));
+      }
+      if (event.key === "-") {
+        setZoom((value) => Math.max(value - 0.25, 0.5));
+      }
+      if (event.key === "0") {
+        setZoom(1);
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [lightbox]);
+
+  const lightboxMarkup = lightbox ? (
+    <div
+      className="fixed inset-0 z-[100] bg-[#211c17]/94 text-[#f8f1e7]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={lightbox.alt || "Image preview"}
+      onClick={() => setLightbox(null)}
+    >
+      <div className="absolute right-4 top-4 z-10 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.14em]">
+        <button
+          type="button"
+          className="border border-[#f8f1e7]/25 bg-[#211c17]/45 px-3 py-2 transition-colors hover:border-[#f8f1e7]/70"
+          onClick={(event) => {
+            event.stopPropagation();
+            setZoom((value) => Math.max(value - 0.25, 0.5));
+          }}
+        >
+          -
+        </button>
+        <button
+          type="button"
+          className="border border-[#f8f1e7]/25 bg-[#211c17]/45 px-3 py-2 transition-colors hover:border-[#f8f1e7]/70"
+          onClick={(event) => {
+            event.stopPropagation();
+            setZoom(1);
+          }}
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <button
+          type="button"
+          className="border border-[#f8f1e7]/25 bg-[#211c17]/45 px-3 py-2 transition-colors hover:border-[#f8f1e7]/70"
+          onClick={(event) => {
+            event.stopPropagation();
+            setZoom((value) => Math.min(value + 0.25, 4));
+          }}
+        >
+          +
+        </button>
+        <button
+          type="button"
+          className="border border-[#f8f1e7]/25 bg-[#211c17]/45 px-3 py-2 transition-colors hover:border-[#f8f1e7]/70"
+          onClick={(event) => {
+            event.stopPropagation();
+            setLightbox(null);
+          }}
+        >
+          Close
+        </button>
+      </div>
+
+      <div
+        className="h-screen w-screen overflow-auto p-6 pt-20"
+        onClick={(event) => event.stopPropagation()}
+        onWheel={(event) => {
+          if (!event.metaKey && !event.ctrlKey) return;
+          event.preventDefault();
+          setZoom((value) =>
+            Math.min(
+              Math.max(value + (event.deltaY > 0 ? -0.12 : 0.12), 0.5),
+              4,
+            ),
+          );
+        }}
+      >
+        <div
+          className={
+            zoom === 1
+              ? "flex min-h-full min-w-full items-center justify-center"
+              : "flex min-h-full w-max min-w-full items-start justify-start"
+          }
+        >
+          <img
+            src={lightbox.src}
+            alt={lightbox.alt}
+            className="object-contain shadow-2xl shadow-black/40"
+            style={
+              zoom === 1
+                ? {
+                    maxWidth: "calc(100vw - 3rem)",
+                    maxHeight: "calc(100vh - 7rem)",
+                  }
+                : {
+                    width: `${zoom * 100}vw`,
+                    maxWidth: "none",
+                    maxHeight: "none",
+                  }
+            }
+          />
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   return (
-    <article className="font-mono">
-      <ReactMarkdown
-        remarkPlugins={[remarkMath, remarkGfm]}
-        rehypePlugins={[rehypeRaw, rehypeKatex]}
-        components={components}
-      >
-        {processed}
-      </ReactMarkdown>
-    </article>
+    <>
+      <article className={styles.article}>
+        <ReactMarkdown
+          remarkPlugins={[remarkMath, remarkGfm]}
+          rehypePlugins={[rehypeRaw, rehypeKatex]}
+          components={components}
+        >
+          {processed}
+        </ReactMarkdown>
+      </article>
+
+      {lightboxMarkup ? createPortal(lightboxMarkup, document.body) : null}
+    </>
   );
 }

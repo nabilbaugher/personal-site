@@ -2,25 +2,24 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
-import Selector from "./Selector.jsx";
-import Draft1 from "./drafts/Draft1.jsx";
-import Draft4 from "./drafts/Draft4.jsx";
-import Draft7 from "./drafts/Draft7.jsx";
-import Draft8 from "./drafts/Draft8.jsx";
-import Draft9 from "./drafts/Draft9.jsx";
-import Draft10 from "./drafts/Draft10.jsx";
+import Home from "./pages/Home.jsx";
+import Draft13 from "./drafts/Draft13.jsx";
+import BlogPost from "./pages/BlogPost.jsx";
+import Projects from "./pages/Projects.jsx";
+import ProjectDetail from "./pages/ProjectDetail.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Selector />} />
-        <Route path="/draft-1" element={<Draft1 />} />
-        <Route path="/draft-4" element={<Draft4 />} />
-        <Route path="/draft-7" element={<Draft7 />} />
-        <Route path="/draft-8" element={<Draft8 />} />
-        <Route path="/draft-9" element={<Draft9 />} />
-        <Route path="/draft-10" element={<Draft10 />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/quiet-index" element={<Draft13 />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
+        {/* Three index layouts to compare; pick one and drop the rest. */}
+        <Route path="/work" element={<Projects variant="ledger" />} />
+        <Route path="/work-b" element={<Projects variant="rich" />} />
+        <Route path="/work-c" element={<Projects variant="cards" />} />
+        <Route path="/work/:slug" element={<ProjectDetail />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

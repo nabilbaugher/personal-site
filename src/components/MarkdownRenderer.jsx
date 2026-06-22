@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
@@ -38,6 +38,16 @@ function renderImageButton({ src, alt, width, imageClassName, openImage }) {
       />
     </button>
   );
+}
+
+function clampZoom(value) {
+  return Math.min(Math.max(value, 0.5), 4);
+}
+
+function getTouchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
 }
 
 const presets = {
@@ -312,11 +322,16 @@ function createComponents(styles, openImage) {
 export default function MarkdownRenderer({ content, variant = "warmSans" }) {
   const [lightbox, setLightbox] = useState(null);
   const [zoom, setZoom] = useState(1);
+  const pinchRef = useRef(null);
+  const dragRef = useRef(null);
+  const lightboxScrollRef = useRef(null);
   const processed = preprocess(content);
   const styles = presets[variant] ?? presets.warmSans;
   const components = createComponents(styles, (image) => {
     setLightbox(image);
     setZoom(1);
+    pinchRef.current = null;
+    dragRef.current = null;
   });
 
   useEffect(() => {
@@ -346,13 +361,99 @@ export default function MarkdownRenderer({ content, variant = "warmSans" }) {
     };
   }, [lightbox]);
 
+  function closeLightbox() {
+    pinchRef.current = null;
+    dragRef.current = null;
+    setLightbox(null);
+  }
+
+  function closeOnBackdropClick(event) {
+    if (event.target === event.currentTarget) {
+      closeLightbox();
+    }
+  }
+
+  function startPinchZoom(event) {
+    if (event.touches.length === 2) {
+      event.preventDefault();
+      event.stopPropagation();
+      dragRef.current = null;
+      pinchRef.current = {
+        distance: getTouchDistance(event.touches),
+        zoom,
+      };
+      return;
+    }
+
+    if (event.touches.length === 1 && zoom > 1 && lightboxScrollRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      const touch = event.touches[0];
+      dragRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        scrollLeft: lightboxScrollRef.current.scrollLeft,
+        scrollTop: lightboxScrollRef.current.scrollTop,
+      };
+    }
+  }
+
+  function updatePinchZoom(event) {
+    if (event.touches.length === 2 && pinchRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      const nextDistance = getTouchDistance(event.touches);
+      setZoom(
+        clampZoom(
+          (pinchRef.current.zoom * nextDistance) / pinchRef.current.distance,
+        ),
+      );
+      return;
+    }
+
+    if (event.touches.length === 1 && dragRef.current && lightboxScrollRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      const touch = event.touches[0];
+      lightboxScrollRef.current.scrollLeft =
+        dragRef.current.scrollLeft + dragRef.current.x - touch.clientX;
+      lightboxScrollRef.current.scrollTop =
+        dragRef.current.scrollTop + dragRef.current.y - touch.clientY;
+    }
+  }
+
+  function endPinchZoom(event) {
+    if (event.touches.length < 2) {
+      pinchRef.current = null;
+    }
+    if (event.touches.length === 0) {
+      dragRef.current = null;
+    }
+  }
+
+  const lightboxImageStyle =
+    zoom === 1
+      ? {
+          maxWidth: "calc(100vw - 3rem)",
+          maxHeight: "calc(100vh - 7rem)",
+          touchAction: "none",
+          userSelect: "none",
+        }
+      : {
+          width: `${zoom * 100}vw`,
+          maxWidth: "none",
+          maxHeight: "none",
+          touchAction: "none",
+          userSelect: "none",
+        };
+
   const lightboxMarkup = lightbox ? (
     <div
       className="fixed inset-0 z-[100] bg-[#211c17]/94 text-[#f8f1e7]"
       role="dialog"
       aria-modal="true"
       aria-label={lightbox.alt || "Image preview"}
-      onClick={() => setLightbox(null)}
+      onClick={closeOnBackdropClick}
     >
       <div className="absolute right-4 top-4 z-10 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.14em]">
         <button
@@ -360,7 +461,7 @@ export default function MarkdownRenderer({ content, variant = "warmSans" }) {
           className="border border-[#f8f1e7]/25 bg-[#211c17]/45 px-3 py-2 transition-colors hover:border-[#f8f1e7]/70"
           onClick={(event) => {
             event.stopPropagation();
-            setZoom((value) => Math.max(value - 0.25, 0.5));
+            setZoom((value) => clampZoom(value - 0.25));
           }}
         >
           -
@@ -380,7 +481,7 @@ export default function MarkdownRenderer({ content, variant = "warmSans" }) {
           className="border border-[#f8f1e7]/25 bg-[#211c17]/45 px-3 py-2 transition-colors hover:border-[#f8f1e7]/70"
           onClick={(event) => {
             event.stopPropagation();
-            setZoom((value) => Math.min(value + 0.25, 4));
+            setZoom((value) => clampZoom(value + 0.25));
           }}
         >
           +
@@ -390,7 +491,7 @@ export default function MarkdownRenderer({ content, variant = "warmSans" }) {
           className="border border-[#f8f1e7]/25 bg-[#211c17]/45 px-3 py-2 transition-colors hover:border-[#f8f1e7]/70"
           onClick={(event) => {
             event.stopPropagation();
-            setLightbox(null);
+            closeLightbox();
           }}
         >
           Close
@@ -398,20 +499,19 @@ export default function MarkdownRenderer({ content, variant = "warmSans" }) {
       </div>
 
       <div
+        ref={lightboxScrollRef}
         className="h-screen w-screen overflow-auto p-6 pt-20"
-        onClick={(event) => event.stopPropagation()}
+        onClick={closeOnBackdropClick}
         onWheel={(event) => {
           if (!event.metaKey && !event.ctrlKey) return;
           event.preventDefault();
           setZoom((value) =>
-            Math.min(
-              Math.max(value + (event.deltaY > 0 ? -0.12 : 0.12), 0.5),
-              4,
-            ),
+            clampZoom(value + (event.deltaY > 0 ? -0.12 : 0.12)),
           );
         }}
       >
         <div
+          onClick={closeOnBackdropClick}
           className={
             zoom === 1
               ? "flex min-h-full min-w-full items-center justify-center"
@@ -422,18 +522,13 @@ export default function MarkdownRenderer({ content, variant = "warmSans" }) {
             src={lightbox.src}
             alt={lightbox.alt}
             className="object-contain shadow-2xl shadow-black/40"
-            style={
-              zoom === 1
-                ? {
-                    maxWidth: "calc(100vw - 3rem)",
-                    maxHeight: "calc(100vh - 7rem)",
-                  }
-                : {
-                    width: `${zoom * 100}vw`,
-                    maxWidth: "none",
-                    maxHeight: "none",
-                  }
-            }
+            style={lightboxImageStyle}
+            draggable="false"
+            onClick={(event) => event.stopPropagation()}
+            onTouchStart={startPinchZoom}
+            onTouchMove={updatePinchZoom}
+            onTouchEnd={endPinchZoom}
+            onTouchCancel={endPinchZoom}
           />
         </div>
       </div>

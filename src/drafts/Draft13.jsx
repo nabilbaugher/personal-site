@@ -40,12 +40,7 @@ export default function Draft13() {
           <div className="mb-6 grid gap-3 font-mono text-xs uppercase tracking-[0.2em] text-[#9a8b7a] md:grid-cols-[1fr_auto]">
             <h2>Index</h2>
             <div className="flex gap-5 md:justify-end">
-              <a
-                href="mailto:nabilbaugher@gmail.com"
-                className="transition-colors hover:text-[#332c25]"
-              >
-                Email
-              </a>
+              <span>[first][last]@gmail.com</span>
               <a
                 href="/Nabil_Baugher_Resume.pdf"
                 className="transition-colors hover:text-[#332c25]"

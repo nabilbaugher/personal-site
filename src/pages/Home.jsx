@@ -52,12 +52,7 @@ export default function Home() {
           </div>
 
           <div className="mt-8 flex gap-5 text-sm text-[#76695c]">
-            <a
-              href="mailto:nabilbaugher@gmail.com"
-              className="transition-colors hover:text-[#2f2923]"
-            >
-              Email
-            </a>
+            <span>[first][last]@gmail.com</span>
             <a
               href="/Nabil_Baugher_Resume.pdf"
               className="transition-colors hover:text-[#2f2923]"

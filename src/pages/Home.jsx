@@ -36,18 +36,33 @@ export default function Home() {
 
           <div className="mt-12 divide-y divide-[#d8cec2] border-y border-[#d8cec2]">
             {posts.map((post) => (
-              <a
-                key={post.slug ?? post.href}
-                href={post.href ?? `/blog/${post.slug}`}
-                className="group grid gap-2 py-5 md:grid-cols-[1fr_auto]"
-              >
-                <span className="text-[#2f2923] transition-colors group-hover:text-[#7d5e3f]">
-                  {post.title}
-                </span>
-                <time className="font-mono text-xs uppercase tracking-[0.16em] text-[#9c8c7a]">
-                  {post.date}
-                </time>
-              </a>
+              post.href ? (
+                <a
+                  key={post.href}
+                  href={post.href}
+                  className="group grid gap-2 py-5 md:grid-cols-[1fr_auto]"
+                >
+                  <span className="text-[#2f2923] transition-colors group-hover:text-[#7d5e3f]">
+                    {post.title}
+                  </span>
+                  <time className="font-mono text-xs uppercase tracking-[0.16em] text-[#9c8c7a]">
+                    {post.date}
+                  </time>
+                </a>
+              ) : (
+                <Link
+                  key={post.slug}
+                  to={`/blog/${post.slug}`}
+                  className="group grid gap-2 py-5 md:grid-cols-[1fr_auto]"
+                >
+                  <span className="text-[#2f2923] transition-colors group-hover:text-[#7d5e3f]">
+                    {post.title}
+                  </span>
+                  <time className="font-mono text-xs uppercase tracking-[0.16em] text-[#9c8c7a]">
+                    {post.date}
+                  </time>
+                </Link>
+              )
             ))}
           </div>
 

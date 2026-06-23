@@ -82,7 +82,7 @@ const presets = {
     h1: "mt-14 mb-7 border-b border-[#d6c7b6] pb-4 font-serif text-4xl font-normal leading-tight tracking-normal text-[#211c17]",
     h2: "mt-14 mb-5 font-serif text-3xl font-normal leading-tight tracking-normal text-[#2a241e]",
     h3: "mt-10 mb-3 font-serif text-2xl font-normal leading-tight tracking-normal text-[#3a3028]",
-    p: "mb-5 text-[1.12rem] leading-8 text-[#5c5146]",
+    p: "mb-5 text-[1.25rem] leading-8 text-[#5c5146]",
     blockquote:
       "my-9 border-l border-[#a98d70] pl-5 font-serif text-xl leading-8 text-[#5c4634]",
     link: "text-[#7d5e3f] underline decoration-[#c4ad95] underline-offset-4 transition-colors hover:text-[#3f2d1f] hover:decoration-[#7d5e3f]",
@@ -90,8 +90,8 @@ const presets = {
     inlineCode:
       "border border-[#d6c7b6] bg-[#f4ecdf] px-1.5 py-0.5 font-mono text-[0.85em] text-[#6d4e32]",
     pre: "my-8 overflow-x-auto border border-[#d6c7b6] bg-[#2b241e] p-5 font-mono text-xs leading-relaxed text-[#f5efe4]",
-    ul: "my-5 ml-5 list-disc space-y-2 text-[1.12rem] leading-8 text-[#5c5146] marker:text-[#b89d82]",
-    ol: "my-5 ml-5 list-decimal space-y-2 text-[1.12rem] leading-8 text-[#5c5146] marker:text-[#9c8268]",
+    ul: "my-5 ml-5 list-disc space-y-2 text-[1.25rem] leading-8 text-[#5c5146] marker:text-[#b89d82]",
+    ol: "my-5 ml-5 list-decimal space-y-2 text-[1.25rem] leading-8 text-[#5c5146] marker:text-[#9c8268]",
     tableWrap:
       "my-10 -mx-4 overflow-x-auto px-4 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10",
     table: "w-full border-collapse text-sm",

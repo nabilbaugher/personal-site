@@ -59,7 +59,7 @@ export default function BlogPost() {
         &larr; home
       </Link>
 
-      <div className="relative z-10 mx-auto max-w-[42rem] px-6 py-16 md:px-0 md:py-20">
+      <div className="relative z-10 mx-auto max-w-[44rem] px-6 py-16 md:px-0 md:py-20">
         <article className="landing-rise">
           <header className="mb-12 border-b border-[#d8cec2] pb-10">
             <time className="mb-5 block font-mono text-xs uppercase tracking-[0.2em] text-[#9a8b7a]">

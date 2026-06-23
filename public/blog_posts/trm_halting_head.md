@@ -1,11 +1,10 @@
 ## TL;DR
 
-- TRM's halting "Q" head is trained only to predict whether a decoded solution exactly matches the labeled path. It doesn't track that. What it most strongly rewards is structural form (a single clean, contiguous start-to-goal route) and it is comparatively indifferent to whether that route is the canonical one, or even the shortest one.
+- TRM's halting "Q" head is trained only to predict whether a decoded solution exactly matches the labeled path. It doesn't track that. I show that what it most strongly rewards is structural form (a single clean, contiguous start-to-goal route) and it is comparatively indifferent to whether that route is the canonical one, or even the shortest one.
 - Measured signal hierarchy on Maze-Hard: path cleanliness (strong, stable across checkpoints) ≫ canonical convention and shortest-optimality (both secondary; shortest-ness is weak and fragile once paths are already clean).
 - Why it matters: using Q as a verifier (as Probabilistic TRM does) may sometimes result in a clean-looking path being picked over one that's actually correct. Q is also used for early stopping during training with a threshold, which often doesn't check shortest-ness at all.
 
-
-Tiny Recursive Model (TRM) is a recent 7M param recursive model that does well on tasks like ARC AGI 1, Maze-Hard, and Sudoku. TRM and its predecessor Hierarchical Reasoning Model (HRM) rely on a halting head, Q, that decides when the model is done. During training, Q gates how much recursive computation each example gets, and follow-up work (Probabilistic TRM) uses Q as a verifier to steer stochastic rollouts. So what Q rewards specifically is worth pinning down: is it the exact label it was trained against, or something else? On Maze-Hard, the model signals less the correct label or even shortest-ness in general, and more the structural form of the output.
+Tiny Recursive Model (TRM) is a recent 7M param recursive model that does well on tasks like ARC AGI 1, Maze-Hard, and Sudoku. TRM and its predecessor Hierarchical Reasoning Model (HRM) rely on a halting head, Q, that decides when the model is done. During training, Q gates how much recursive computation each example gets, and follow-up work (Probabilistic TRM) uses Q as a verifier to steer stochastic rollouts. So I wanted to pin down what Q specifically rewards: is it the exact label it was trained against, or something else? On Maze-Hard, I find that the model signals less the correct label or even shortest-ness in general, and more the structural form of the output.
 
 ## The context
 
@@ -27,7 +26,7 @@ For clarity, here's the terminology I'll use:
 - Branchy -> a single connected path from start to goal, but with branches/spurs
 - Disconnected -> 2+ fragments/islands
 
-The specific properties used to define cleanliness
+The specific properties I use to define cleanliness:
 
 - Connected traversable path from start to end: BFS from start along path reaches end
 - Per-cell path degree check: each path component (excluding start/end) must have exactly 2 neighboring path components (including start/end)
@@ -38,12 +37,12 @@ The primary model in this post is a reproduction of the paper's Maze-Hard TRM, t
 
 The model exactly matches the canonical label on 785/1000 mazes, but produces a clean start-to-goal route on 890/1000: 50 CSNC paths plus 55 clean non-shortest paths.
 
-To get a better sense of how well the model separates classes, we'll use AUC, a metric that can be interpreted as the probability the model will rank a random positive sample over a random negative sample. 
+To get a better sense of how well the model separates classes, I use AUC, a metric that can be interpreted as the probability the model will rank a random positive sample over a random negative sample. 
 
 - AUC(Q, canonical) = 0.896
 - AUC(Q, clean) = 0.991
 
-Relabeling these clean outputs as positive moves separability indicated by AUC from strong to almost perfect (Δ = +0.095). 
+When I relabel these clean outputs as positive, separability (AUC) moves from strong to almost perfect (Δ = +0.095). 
 
 To estimate a confidence interval, I sample 1000 mazes from the test set with replacement, approximating the maze distribution. Repeating this 10k times, I get a 95% confidence interval of [+0.069, +0.122] and P(Δ ≤ 0) = 0/10000, so this +0.095 difference is stable across redraws from this dataset's distribution.
 
@@ -53,7 +52,7 @@ Since the Q logit value per maze is constant, the change in AUC is purely a prod
 
 The KDE makes the ordering visible. The three clean classes (canonical, CSNC, clean non-shortest) sit above the halting threshold while branchy and disconnected fall below it. Cleanliness is the dominant axis (the 0.991 relabel above confirms this). Within the clean classes, two weaker axes appear:
 
-- **Convention is weakly present.** Canonical clusters a little higher and tighter than CSNC and clean non-shortest. To isolate the convention axis, we can calculate separation between canonical and CSNC (both shortest paths, differ only in adherence to the BFS tiebreak). Canonical vs CSNC AUC = **0.765** (95% CI [0.687, 0.832]; 0.5 would mean Q ignored the tiebreak entirely).
+- **Convention is weakly present.** Canonical clusters a little higher and tighter than CSNC and clean non-shortest. To isolate the convention axis, I calculate separation between canonical and CSNC (both shortest paths, differ only in adherence to the BFS tiebreak). Canonical vs CSNC AUC = **0.765** (95% CI [0.687, 0.832]; 0.5 would mean Q ignored the tiebreak entirely).
 - **Shortest-ness is weaker still, essentially absent.** Looking at the KDE, CSNC and clean non-shortest land almost on top of each other. These two classes are both clean and non-canonical and therefore let us isolate shortest-ness: CSNC vs clean non-shortest AUC = **0.549** (95% CI [0.436, 0.661], covering chance).
 
 So Q grades structural cleanliness, with a slight convention axis and no real sensitivity to whether the clean path is actually the shortest one.
@@ -80,7 +79,7 @@ So the results hold. Of course these checkpoints are from the same training run,
 
 ## What happens when Q is used with a threshold?
 
-Everything so far has been a ranking result via AUC. But during training Q is used as a gate: at `Q>0`, recursion stops for that example. So at training time it's the threshold behavior shaping the computation. Looking at Q's threshold behavior, we see a similar picture. 
+Everything so far has been a ranking result via AUC. But during training Q is used as a gate: at Q>0, recursion stops for that example. So at training time it's the threshold behavior shaping the computation. Looking at Q's threshold behavior, I uncover a similar picture. 
 
 The threshold setup gives these adjacent halting probabilities:
 
@@ -100,7 +99,7 @@ $$
 P(Q > 0 \mid \text{clean, shortest, canonical}) = 0.954
 $$
 
-The table below gives each axis's contribution to the probability of halting (Q>0) derived as deltas from the above probabilities:
+The table below gives each axis' contribution to the probability of halting (Q>0) which I derive as deltas from the above probabilities:
 
 | Axis         | Effect on Q>0 pass probability | 95% CI         |
 | ------------ | ------------------------------ | -------------- |
@@ -121,11 +120,11 @@ Because this gate runs throughout training, it may affect what the prediction he
 
 ## Conclusion
 
-On Maze-Hard, TRM's halting head grades structural form over correctness. Q's ranking is dominated by path cleanliness strongly and stably across both training recipes. Properties the task depends on like canonical tiebreak and shortest-ness show up as secondary or not at all. This is an existence proof that despite being trained to predict an exact label, Q can learn an unintended heuristic based on task structure.
+I find that on Maze-Hard, TRM's halting head grades structural form over correctness. Q's ranking is dominated by path cleanliness strongly and stably across both training recipes. Properties the task depends on like canonical tiebreak and shortest-ness show up as secondary or not at all. This is an existence proof that despite being trained to predict an exact label, Q can learn an unintended heuristic based on task structure.
 
 When Q's raw logit is used as a verifier (e.g. Probabilistic TRM's rollout selection), the emergent structure here is not likely to cause catastrophic issues: a canonical path is still likely to have a larger Q than a clean non-shortest or CSNC path. Yet there is some overlap between the distributions of canonical and clean non-canonical paths, meaning there could be instances where Q chooses a clean correct-looking path over one that's actually labeled correct. 
 
-The behavior of early stop gate that uses Q during training is dependent on where in the distribution the threshold slices. Much of the time we saw it prioritizes cleanliness, sometimes in certain conditions like overall accuracy collapse it prioritizes convention. That Q's learned heuristics affect the prediction head's training is suggested but not established. 
+The behavior of early stop gate that uses Q during training is dependent on where in the distribution the threshold slices. Much of the time I saw it prioritizes cleanliness, sometimes in certain conditions like overall accuracy collapse it prioritizes convention. I suspect Q's learned heuristics affect the prediction head's training, but this is an open question. 
 
 ## Citations
 

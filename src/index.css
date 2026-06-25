@@ -58,6 +58,16 @@
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0.5rem 0;
+  text-align: center !important;
+}
+
+.katex-display > .katex,
+.katex-display.fleqn > .katex {
+  display: inline-block !important;
+  text-align: center !important;
+  padding-left: 0 !important;
+  width: max-content;
+  max-width: 100%;
 }
 
 .katex {

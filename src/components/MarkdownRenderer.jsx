@@ -50,6 +50,13 @@ function getTouchDistance(touches) {
   return Math.hypot(dx, dy);
 }
 
+function hasClassName(node, className) {
+  const classNames = node?.properties?.className;
+  return Array.isArray(classNames)
+    ? classNames.includes(className)
+    : classNames === className;
+}
+
 const presets = {
   warmSans: {
     article: "markdown-body markdown-body-warm",
@@ -82,7 +89,7 @@ const presets = {
     h1: "mt-14 mb-7 border-b border-[#d6c7b6] pb-4 font-serif text-4xl font-normal leading-tight tracking-normal text-[#211c17]",
     h2: "mt-14 mb-5 font-serif text-3xl font-normal leading-tight tracking-normal text-[#2a241e]",
     h3: "mt-10 mb-3 font-serif text-2xl font-normal leading-tight tracking-normal text-[#3a3028]",
-    p: "mb-5 text-[1.25rem] leading-8 text-[#5c5146]",
+    p: "mb-5 text-[1.16rem] leading-8 text-[#5c5146]",
     blockquote:
       "my-9 border-l border-[#a98d70] pl-5 font-serif text-xl leading-8 text-[#5c4634]",
     link: "text-[#7d5e3f] underline decoration-[#c4ad95] underline-offset-4 transition-colors hover:text-[#3f2d1f] hover:decoration-[#7d5e3f]",
@@ -90,8 +97,8 @@ const presets = {
     inlineCode:
       "border border-[#d6c7b6] bg-[#f4ecdf] px-1.5 py-0.5 font-mono text-[0.85em] text-[#6d4e32]",
     pre: "my-8 overflow-x-auto border border-[#d6c7b6] bg-[#2b241e] p-5 font-mono text-xs leading-relaxed text-[#f5efe4]",
-    ul: "my-5 ml-5 list-disc space-y-2 text-[1.25rem] leading-8 text-[#5c5146] marker:text-[#b89d82]",
-    ol: "my-5 ml-5 list-decimal space-y-2 text-[1.25rem] leading-8 text-[#5c5146] marker:text-[#9c8268]",
+    ul: "my-4 ml-5 list-disc space-y-1 text-[1.16rem] leading-8 text-[#5c5146] marker:text-[#b89d82]",
+    ol: "my-4 ml-5 list-decimal space-y-1 text-[1.16rem] leading-8 text-[#5c5146] marker:text-[#9c8268]",
     tableWrap:
       "my-10 -mx-4 overflow-x-auto px-4 sm:-mx-8 sm:px-8 md:-mx-10 md:px-10",
     table: "w-full border-collapse text-sm",
@@ -180,15 +187,27 @@ function createComponents(styles, openImage) {
   p: ({ children, node }) => {
     // Image-only markdown paragraphs need to avoid nesting a figure inside <p>.
     const child = node?.children;
+    const meaningfulChildren = child?.filter(
+      (item) => item.type !== "text" || item.value.trim() !== "",
+    );
     if (
-      child?.length === 2 &&
+      meaningfulChildren?.length === 1 &&
+      meaningfulChildren[0].type === "element" &&
+      hasClassName(meaningfulChildren[0], "katex")
+    ) {
+      return <p className={`${styles.p} text-center`}>{children}</p>;
+    }
+    if (
+      child?.length >= 2 &&
       child[0].type === "element" &&
       child[0].tagName === "img" &&
       child[1].type === "text" &&
       child[1].value.trim().match(/^Fig(?:\.|ure)?\s*\d*/i)
     ) {
       const image = child[0].properties ?? {};
-      const caption = child[1].value.trim();
+      const captionChildren = Array.isArray(children)
+        ? children.slice(1)
+        : children;
       return (
         <figure className="my-10">
           {renderImageButton({
@@ -198,8 +217,8 @@ function createComponents(styles, openImage) {
             imageClassName: styles.img,
             openImage,
           })}
-          <figcaption className="mt-3 text-left text-sm leading-6 text-[#76695c]">
-            {caption}
+          <figcaption className="mt-3 text-left text-base leading-7 text-[#76695c]">
+            {captionChildren}
           </figcaption>
         </figure>
       );
@@ -211,6 +230,17 @@ function createComponents(styles, openImage) {
     ) {
       return (
         <figure className="my-10 flex flex-col items-start">{children}</figure>
+      );
+    }
+    if (
+      child?.length === 1 &&
+      child[0].type === "text" &&
+      child[0].value.trim().match(/^Fig(?:\.|ure)?\s*\d*/i)
+    ) {
+      return (
+        <p className="mt-[-1.25rem] mb-8 text-left text-base leading-7 text-[#76695c]">
+          {children}
+        </p>
       );
     }
     return (

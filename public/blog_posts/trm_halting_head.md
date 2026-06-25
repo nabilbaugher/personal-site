@@ -14,7 +14,7 @@ Every Maze-Hard maze has multiple shortest-path solutions, but the labels mark o
 
 Maze-Hard is Sapient Intelligence's 30×30 maze benchmark, adapted from Lehnert et al.'s Searchformer maze-generation setup by filtering for mazes with shortest-path length >110. It was then used in the HRM and TRM papers as one of 3 main benchmarks alongside Sudoku and ARC AGI 1.
 
-![[shortest-vs-canonical-viz.png]]Fig 1: Three maze examples from Maze-Hard. Canonical label path in green, cells belonging to alternate shortest paths in yellow.
+![[shortest-vs-canonical-viz.png]] Fig. 1: Three maze examples from Maze-Hard. Canonical label path in green, cells belonging to alternate shortest paths in yellow.
 
 The TRM's Q head produces a scalar logit trained with a binary cross entropy loss to predict whether or not decoding the solution now will exactly match the labeled grid. This signal was used for early stopping in training rollouts, so instead of always rolling out 16 full recursive steps, if at the end of a step the Q head logit was > 0, no more steps would be spent on that training example. 10% of the time, a minimum number of recursive steps was generated between 2 and 16, overriding the Q head.
 
@@ -48,7 +48,7 @@ To estimate a confidence interval, I sample 1000 mazes from the test set with re
 
 Since the Q logit value per maze is constant, the change in AUC is purely a product of relabeling the clean non-canonical boards (50 CSNC + 55 clean non-shortest) from "wrong" to "right". Q was trained to call these 105 boards wrong, so relabeling them as right should have lowered AUC if Q's scores tracked its trained target. Fig. 2 shows the distribution of Q logit values by class: it's clear the probability masses of clean non-canonical Q values (CSNC and clean non-shortest) overlap more with those of canonical boards than those of the other negative classes (branchy + disconnected). This holds despite all classes aside from canonical holding identical negative training labels.
 
-![[5-class-kde.png]]Fig. 2: KDE showing probability mass of Q logit value by class. Exact data points are below in the rug plot. Q threshold used for early stopping during training is marked with the dashed line. Clean connected paths tend to have a Q logit above 0 while branchy and disconnected paths tend to cluster below 0.
+![[5-class-kde.png]] Fig. 2: KDE showing probability mass of Q logit value by class. Exact data points are below in the rug plot. Q threshold used for early stopping during training is marked with the dashed line. Clean connected paths tend to have a Q logit above 0 while branchy and disconnected paths tend to cluster below 0.
 
 The KDE makes the ordering visible. The three clean classes (canonical, CSNC, clean non-shortest) sit above the halting threshold while branchy and disconnected fall below it. Cleanliness is the dominant axis (the 0.991 relabel above confirms this). Within the clean classes, two weaker axes appear:
 
@@ -65,13 +65,11 @@ In the process of my other TRM experiments, I trained a version of the TRM with 
 
 Fig. 3 shows that AUC(Q, clean) > AUC(Q, canonical) across all checkpoints. 
 
-![[canonical-vs-clean-aucs-all.png]]
-Fig. 3: AUC(Q, clean) vs AUC(Q, canonical) across all checkpoints. Δ (AUC_clean − AUC_canonical) is positive on 10/10 schedule-jitter checkpoints, with the bootstrap confidence interval excluding zero on 9/10. Δ ranges +0.011 to +0.137 (median +0.052); only the earliest checkpoint is borderline (Δ +0.011, CI [−0.003, +0.025], p=0.054). The number of clean non-canonical classified boards ranges 79–451 (median 119).
+![[canonical-vs-clean-aucs-all.png]] Fig. 3: AUC(Q, clean) vs AUC(Q, canonical) across all checkpoints. Δ (AUC_clean − AUC_canonical) is positive on 10/10 schedule-jitter checkpoints, with the bootstrap confidence interval excluding zero on 9/10. Δ ranges +0.011 to +0.137 (median +0.052); only the earliest checkpoint is borderline (Δ +0.011, CI [−0.003, +0.025], p=0.054). The number of clean non-canonical classified boards ranges 79–451 (median 119).
 
 Fig. 4 shows the order of importance of the axes roughly holds across all checkpoints: cleanliness > convention > shortest-ness (at 3 checkpoints there is overlap in the confidence intervals between convention and shortest-ness).
 
-![[q-main-axes.png]]
-Fig. 4: AUC(Q, cleanliness), AUC(Q, convention), and AUC(Q, shortest-ness) across all checkpoints, with bootstrap 95% confidence intervals.
+![[q-main-axes.png]] Fig. 4: AUC(Q, cleanliness), AUC(Q, convention), and AUC(Q, shortest-ness) across all checkpoints, with bootstrap 95% confidence intervals.
 
 On the final schedule-jitter checkpoint the model's accuracy collapses, getting only 356/1000 correct boards but maintaining 807/1000 clean outputs. Even in these conditions, the preference for cleanliness over convention is unchanged as seen in Fig. 4 (390k steps). So even when the output head drifted in behavior, Q stayed largely consistent in its preference. 
 
@@ -109,8 +107,7 @@ The table below gives each axis' contribution to the probability of halting (Q>0
 
 The threshold halts strongly on cleanliness, near zero on shortest-ness, and weakly on convention. This matches the ranking picture: cleanliness is dominant, convention is secondary, and shortest-ness is near chance. The same ordering shows up in the ranking AUCs (matched single-axis contrasts): 0.966 for clean non-shortest vs islanded/disconnected, 0.765 for canonical vs CSNC, and 0.549 for CSNC vs clean non-shortest. The clean classes clear the threshold; branchy and disconnected mostly fall below it.
 
-![[threshold-behavior.png]]
-Fig. 5: Modeled P(Q>0) by nested path profile across schedule-jitter checkpoints (original recipe detached, left). Profiles add one property at a time: not clean → clean non-shortest → CSNC → canonical. Not-clean stays near the floor everywhere and canonical sits above the other clean classes everywhere. Absolute probabilities swing by checkpoint, but the structure remains. 
+![[threshold-behavior.png]] Fig. 5: Modeled P(Q>0) by nested path profile across schedule-jitter checkpoints (original recipe detached, left). Profiles add one property at a time: not clean → clean non-shortest → CSNC → canonical. Not-clean stays near the floor everywhere and canonical sits above the other clean classes everywhere. Absolute probabilities swing by checkpoint, but the structure remains. 
 
 Fig. 5 traces P(Q>0) by path type across the schedule-jitter run. Three things hold at every checkpoint: not-clean paths almost never halt (cleanliness is close to a precondition for halting); clean-shortest and clean-non-shortest track each other (shortest-ness doesn't move the threshold, and its sign even flips between checkpoints); and canonical halts more than clean-non-canonical (convention is a consistent upward tilt).
 

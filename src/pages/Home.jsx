@@ -8,6 +8,11 @@ const posts = [
     date: "Jun 2026",
   },
   {
+    title: "Testing Attention Over Previous States in TRM",
+    slug: "trm-attention-exploration",
+    date: "Jun 2026",
+  },
+  {
     title: "Saying Things That Are True",
     href: "https://substack.com/home/post/p-191404123",
     date: "Mar 2026",

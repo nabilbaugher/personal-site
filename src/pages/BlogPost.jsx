@@ -9,6 +9,11 @@ const POST_META = {
     title: "What TRM's Halting Head Actually Learns",
     date: 'Jun 2026',
   },
+  'trm-attention-exploration': {
+    file: '/blog_posts/trm_attention_exploration.md',
+    title: 'Testing Attention Over Previous States in TRM',
+    date: 'Jun 2026',
+  },
 }
 
 export default function BlogPost() {
